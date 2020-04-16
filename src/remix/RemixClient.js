@@ -111,13 +111,6 @@ export class RemixClient extends PluginClient {
   // }
 
   verify = async (formData) => {
-    return new Promise(async (resolve, reject) => {
-            let response = await axios.post(`${this.serverUrl}`, formData)
-            resolve(response);
-    })
-  }
-
-  verify = async (formData) => {
         return axios.post(`${this.serverUrl}`, formData)
     }
 }
