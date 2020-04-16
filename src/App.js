@@ -3,16 +3,19 @@ import {createIframeClient} from '@remixproject/plugin'
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {VerifyContract} from "./components/verify-contract/VerifyContract";
 import {ContractFetcher} from "./components/contract-fetcher/ContractFetcher";
+import {remixClient} from "./remix/RemixClient";
 
 function App() {
   const client = createIframeClient();
   console.log(client);
 
+  remixClient.listenOnCompilationFinishedInit()
+
   return (
     <div className="App">
       <VerifyContract/>
-      {/*<ContractFetcher client={client}/>*/}
-      {/*<ContractGetterForm/>*/}
+      {<ContractFetcher client={client}/>}
+      {<ContractGetterForm/>}
     </div>
   )
 }
@@ -21,7 +24,6 @@ class ContractGetterForm extends React.Component {
   constructor(props) {
     super(props)
     this.state = { contractAddress: '', client: createIframeClient(), metadata: {}, compilerVersion: '', abi: '' }
-    this.fetchContract = this.fetchContract.bind(this)
     this.handleChange = this.handleChange.bind(this)
   }
 
@@ -34,7 +36,7 @@ class ContractGetterForm extends React.Component {
         </div>
         <div className="panel-body p-3">
           <input className="form-control" value={this.state.contractAddress} onChange={this.handleChange} type="text" name="address" />
-          <button className="btn btn-secondary mt-2" onClick={this.fetchContract}>Fetch</button>
+          <button className="btn btn-secondary mt-2" onClick={remixClient.fetch}>Fetch</button>
           <div className="text-info mt-2" >{this.state.info}</div>
         </div>
         {this.state.compilerVersion && <div>

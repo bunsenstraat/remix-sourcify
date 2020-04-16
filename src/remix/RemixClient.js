@@ -16,6 +16,26 @@ export class RemixClient extends PluginClient {
         return this.client.onload();
     }
 
+    async listenOnCompilationFinishedInit() {
+        await this.createClient;
+        this.client.solidity.on("compilationFinished", (e,t,n,r)=>{
+            if (!r)
+                return;
+            // let docs = ie(r);
+            // this.client.emit("statusChanged", {
+            //     key: "succeed",
+            //     type: "success",
+            //     title: "New documentation ready"
+            // }),
+            console.log(e);
+            console.log(t);
+            console.log(n);
+            console.log(r);
+            //this.requestUpdate()
+        }
+        )
+    }
+
     getFile = async (name) => {
         return new Promise(async (resolve, reject) => {
             let path = name.startsWith('./') ? name.substr(2) : name;
@@ -109,13 +129,6 @@ export class RemixClient extends PluginClient {
   //           resolve(address);
   //       });
   // }
-
-  verify = async (formData) => {
-    return new Promise(async (resolve, reject) => {
-            let response = await axios.post(`${this.serverUrl}`, formData)
-            resolve(response);
-    })
-  }
 
   verify = async (formData) => {
         return axios.post(`${this.serverUrl}`, formData)
