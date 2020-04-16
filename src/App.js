@@ -20,6 +20,7 @@ function App() {
   )
 }
 
+
 class ContractGetterForm extends React.Component {
   constructor(props) {
     super(props)
