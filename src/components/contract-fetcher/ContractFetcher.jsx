@@ -40,14 +40,13 @@ export const ContractFetcher = () => {
                 setResult([JSON.stringify(response)]);
                 console.log(result)
             } else {
-                console.log(e)
                 setLoading(false);
-                setError(`Something went wrong!`);
+                setError(e);
             }
 
         } catch (e) {
             setLoading(false);
-            setError(`Something went wrong!`);
+            setError(e);
         }
     };
     
