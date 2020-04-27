@@ -80,9 +80,28 @@ export class RemixClient extends PluginClient {
         await this.saveFetchedToRemix(result.metadata, result.contract, address)       
     }
 
+    fetchFiles = async (network, address) => {
+        axios.interceptors.response.use((response) => {
+            return response;
+        }, function (error) {
+            return Promise.reject(error.response);
+        });
+
+        let response;
+
+        try{
+            response = await axios.get(`${SERVER_URL}/files/${network.name.toLowerCase()}/${address}`)
+            console.log("Response:" + JSON.stringify(response))
+        } catch(err) {
+            console.log("Error:" + JSON.stringify(err));
+            response = err;
+        }
+
+        return response;
+    }
+
     fetch = async (address, chain) => {
-        return new Promise(async (resolve, reject) => {
-            try {
+        return new Promise(async (resolve, reject) => {   
                 let network = await this.detectNetwork()
                 
                 // Use version from plugin if vm is used inside Remix or there is no network at all
@@ -90,18 +109,18 @@ export class RemixClient extends PluginClient {
                     network.name = chain.value;
                     network.id = chain.id 
                 }
-                let response;
-                try {
-                    response = await axios.get(`${SERVER_URL}/files/${network.name.toLowerCase()}/${address}`)
-                    console.log("Response:" + response);
-                    if (!response) reject({info: `ŝource of ${address} not found on network ${network.id}`})
-                    if (!(response.status === 200)) reject({info: `${response.status}. Network: ${network.name}`}) 
-                } catch(error){
-                    console.log("Error:" + JSON.stringify(error));
-                    reject({info: `${error.status}. Network: ${network.name}`})
-                }
-            
 
+
+                let response = await this.fetchFiles(network, address);
+                
+                //console.log("Error:" + JSON.stringify(error));
+                console.log("Response:" + JSON.stringify(response));
+
+                if(response.data.error) {
+                    return reject({info: `${response.data.error}. Network: ${network.name}`}) 
+                }
+
+            
                 let metadata;
                 let contract;
                 for(let i in response.data){
@@ -115,10 +134,6 @@ export class RemixClient extends PluginClient {
 
                 console.log({ "metadata": metadata, "contract": contract });
                 resolve({ "metadata": metadata, "contract": contract });
-                } catch(err) {
-                    console.log(JSON.stringify(err))
-                    reject(err.message);
-                }   
         });
     }
 

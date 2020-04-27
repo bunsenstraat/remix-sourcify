@@ -8,7 +8,7 @@ import {Alert, Spinner} from "../common";
 export const ContractFetcher = () => {
     const [chain, setChain] = useState(chainOptions[0]);
     const [address, setAddress] = useState('');
-    const [error, setError] = useState(null);
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [chainValue, setChainValue] = useState(null);
     const [result, setResult] = useState([]);
@@ -41,12 +41,12 @@ export const ContractFetcher = () => {
                 console.log(result)
             } else {
                 setLoading(false);
-                setError(e);
+                setError(JSON.stringify(e));
             }
 
         } catch (e) {
             setLoading(false);
-            setError(e);
+            setError(JSON.stringify(e));
         }
     };
     
