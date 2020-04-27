@@ -1,6 +1,6 @@
 import {connectIframe, listenOnThemeChanged, PluginClient} from '@remixproject/plugin';
 import axios from 'axios';
-import { SERVER_URL, REPOSITORY_URL } from '../common/Constants';
+import { SERVER_URL } from '../common/Constants';
 
 export class RemixClient extends PluginClient {
 
@@ -81,20 +81,12 @@ export class RemixClient extends PluginClient {
     }
 
     fetchFiles = async (network, address) => {
-        axios.interceptors.response.use((response) => {
-            return response;
-        }, function (error) {
-            return Promise.reject(error.response);
-        });
-
         let response;
 
         try{
             response = await axios.get(`${SERVER_URL}/files/${network.name.toLowerCase()}/${address}`)
-            console.log("Response:" + JSON.stringify(response))
         } catch(err) {
-            console.log("Error:" + JSON.stringify(err));
-            response = err;
+            response = err.response;
         }
 
         return response;
@@ -110,12 +102,8 @@ export class RemixClient extends PluginClient {
                     network.id = chain.id 
                 }
 
-
                 let response = await this.fetchFiles(network, address);
                 
-                //console.log("Error:" + JSON.stringify(error));
-                console.log("Response:" + JSON.stringify(response));
-
                 if(response.data.error) {
                     return reject({info: `${response.data.error}. Network: ${network.name}`}) 
                 }
@@ -138,31 +126,22 @@ export class RemixClient extends PluginClient {
     }
 
     saveFetchedToRemix = async (metadata, contract, address) => {
-            try {
-            let compilerVersion = metadata.compiler.version;
-            let abi = JSON.stringify(metadata.output.abi, null, '\t');
-            console.log(address)
-            this.createFile(`/verifiedSources/${address}/metadata.json`, JSON.stringify(metadata, null, '\t'))
+            this.createFile(`/verified-sources/${address}/metadata.json`, JSON.stringify(metadata, null, '\t'))
             let switched = false
             for (let file in metadata['sources']) {
-                console.log(file)
                 const urls = metadata['sources'][file].urls
                 for (let url of urls) {
                     if (url.includes('ipfs')) {
                         let stdUrl = `ipfs://${url.split('/')[2]}`
                         const source = await this.contentImport(stdUrl)
                         file = file.replace('browser/', '')
-                        if(source.content) this.createFile(`/verifiedSources/${address}/${file}`, source.content)
-                        if (!switched) await this.switchFile(`${address}/${file}`)
+                        if(source.content) this.createFile(`/verified-sources/${address}/${file}`, source.content)
+                        if (!switched) await this.switchFile(`/verified-sources/${address}/${file}`)
                         switched = true
                         break
                     }
                 }
             }
-        } catch(err){
-            console.log(err)
-        }
-        
     }
 
 
