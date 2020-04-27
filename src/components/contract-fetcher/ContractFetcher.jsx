@@ -1,22 +1,17 @@
 import React, {useState} from "react";
 import { Dropdown } from "../common/form/Dropdown"
 import { AddressInput } from "../common/form/AddressInput"
-import {chainOptions, REPOSITORY_URL} from "../../common/Constants"
+import {chainOptions} from "../../common/Constants"
 import { remixClient } from "../../remix/RemixClient"
 import {Alert, Spinner} from "../common";
  
 export const ContractFetcher = () => {
     const [chain, setChain] = useState(chainOptions[0]);
     const [address, setAddress] = useState('');
-    const [error, setError] = useState(null);
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [chainValue, setChainValue] = useState(null);
     const [result, setResult] = useState([]);
-    const [contractAddress, setContractAddress] = useState('');
-    const [metadata, setMetadata] = useState({});
-    const [compilerVersion, setCompilerVersion] = useState('');
-    const [abi, setAbi] = useState('');
-    const [info, setInfo] = useState('');
 
     const resetState = () => {
         setError(null);
@@ -40,14 +35,13 @@ export const ContractFetcher = () => {
                 setResult([JSON.stringify(response)]);
                 console.log(result)
             } else {
-                console.log(e)
                 setLoading(false);
-                setError(`Something went wrong!`);
+                setError(JSON.stringify(e));
             }
 
         } catch (e) {
             setLoading(false);
-            setError(`Something went wrong!`);
+            setError(JSON.stringify(e));
         }
     };
     
