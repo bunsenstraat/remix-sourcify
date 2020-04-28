@@ -95,14 +95,13 @@ export class RemixClient extends PluginClient {
     fetch = async (address, chain) => {
         return new Promise(async (resolve, reject) => {   
                 let network = await this.detectNetwork()
-                
 
                 // Use version from plugin if vm is used inside Remix or there is no network at all
                 if(typeof network === "undefined" || network.id === "-" ) {
                     network.name = chain.name;
                     network.id = chain.id 
                 }
-
+                
                 let response = await this.fetchFiles(network, address);
                 
                 if(response.data.error) {
