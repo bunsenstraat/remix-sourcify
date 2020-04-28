@@ -10,13 +10,13 @@ export const ContractFetcher = () => {
     const [address, setAddress] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [chainValue, setChainValue] = useState(null);
+    const [chainName, setChainName] = useState(null);
     const [result, setResult] = useState([]);
 
     const resetState = () => {
         setError(null);
         setResult([]);
-        setChainValue(null);
+        setChainName(null);
     };
 
     const handleSubmit = async (e) => {
@@ -31,7 +31,7 @@ export const ContractFetcher = () => {
 
             if (!!response) {
                 setLoading(false);
-                setChainValue(chain.value);
+                setChainName(chain.name);
                 setResult([JSON.stringify(response)]);
                 console.log(result)
             } else {

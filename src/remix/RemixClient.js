@@ -96,9 +96,10 @@ export class RemixClient extends PluginClient {
         return new Promise(async (resolve, reject) => {   
                 let network = await this.detectNetwork()
                 
+
                 // Use version from plugin if vm is used inside Remix or there is no network at all
-                if(typeof network !== "undefined" || network.id === "-" ) {
-                    network.name = chain.value;
+                if(typeof network === "undefined" || network.id === "-" ) {
+                    network.name = chain.name;
                     network.id = chain.id 
                 }
 
