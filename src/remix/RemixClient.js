@@ -84,6 +84,7 @@ export class RemixClient extends PluginClient {
         let response;
 
         try{
+            console.log(`${SERVER_URL}/files/${network.name.toLowerCase()}/${address}`)
             response = await axios.get(`${SERVER_URL}/files/${network.name.toLowerCase()}/${address}`)
         } catch(err) {
             response = err.response;
@@ -102,12 +103,12 @@ export class RemixClient extends PluginClient {
                     network.id = chain.id 
                 }
                 
+                console.log(network)
                 let response = await this.fetchFiles(network, address);
                 
                 if(response.data.error) {
                     return reject({info: `${response.data.error}. Network: ${network.name}`}) 
                 }
-
             
                 let metadata;
                 let contract;

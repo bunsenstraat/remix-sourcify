@@ -36,7 +36,7 @@ export const VerifyContract = () => {
                     !!result.length && (
                         <Alert type={'success'} heading='Contract successfully verified!'>
                             <p className="m-0 mt-2">
-                                View the assets in the <a href={`${REPOSITORY_URL}contract/${chainValue}/${result[0].address}`}> file explorer.
+                                View the assets in the <a target="_blank" href={`${REPOSITORY_URL}contract/${chainValue}/${result[0].address}`}> file explorer.
                             </a>
                             </p>
                             {
