@@ -36,7 +36,7 @@ export const ContractForm = ({ setLoading, setError, setResult, setChainValue })
         const formData = new FormData();
 
         formData.append('address', address);
-        formData.append('chain', chain.value);
+        formData.append('chain', chain.name);
 
         if (files.length > 0) {
             files.forEach(file => formData.append('files', file));
@@ -49,7 +49,7 @@ export const ContractForm = ({ setLoading, setError, setResult, setChainValue })
 
             if (!!response.data.result.length) {
                 setLoading(false);
-                setChainValue(chain.value);
+                setChainValue(chain.name);
                 setResult(response.data.result);
             } else {
                 setLoading(false);

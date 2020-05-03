@@ -1,6 +1,6 @@
 export const REPOSITORY_URL = "https://contractrepo.verify.shardlabs.io/";
 
-export const SERVER_URL = "http://localhost:5000";
+export const SERVER_URL = "https://server.verify.shardlabs.io";
     
 export const chainOptions = [
         { name: 'mainnet', label: 'Ethereum Mainnet', id: 1 },
