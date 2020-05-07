@@ -1,22 +1,26 @@
-import {connectIframe, listenOnThemeChanged, PluginClient} from '@remixproject/plugin';
+import {connectIframe, listenOnThemeChanged} from '@remixproject/plugin';
+import { Api, createIframeClient, PluginClient, RemixApi } from '@remixproject/plugin';
 import axios from 'axios';
 import { SERVER_URL } from '../common/Constants';
+import { FetchResult } from '../state/types';
 
 export class RemixClient extends PluginClient {
+
+    private client: PluginClient<any> = createIframeClient<Api, RemixApi>();
 
     constructor() {
         super();
         this.methods = ["fetch", "verify"];
-        connectIframe(this);
-        listenOnThemeChanged(this);
-        this.client = this;
+        connectIframe(this.client);
+        listenOnThemeChanged(this.client);
     }
 
     createClient = () => {
+        console.log("Loading client")
         return this.client.onload();
     }
 
-    getFile = async (name) => {
+    getFile = async (name: string) => {
         return new Promise(async (resolve, reject) => {
             let path = name.startsWith('./') ? name.substr(2) : name;
             let content = await this.client.call('fileManager', 'getFile', this.getBrowserPath(path));
@@ -28,7 +32,7 @@ export class RemixClient extends PluginClient {
         });
     }
 
-    getFolderByAddress = async (address) => {
+    getFolderByAddress = async (address: string)  => {
         return this.client.call('fileManager', 'getFolder', this.getBrowserPath(address))
     }
 
@@ -36,7 +40,7 @@ export class RemixClient extends PluginClient {
         return this.client.call('fileManager', 'getCurrentFile');
     }
 
-    createFile = async (name, content) => {
+    createFile = async (name: string, content: any) => {
         try {
             await this.client.call('fileManager', 'setFile', name, content)
         } catch (err) {
@@ -44,22 +48,22 @@ export class RemixClient extends PluginClient {
         }
     }
 
-    switchFile = async (name) => {
+    switchFile = async (name: string) => {
         await this.client.call('fileManager', 'switchFile', name)
     }
 
-    getBrowserPath = (path) => {
+    getBrowserPath = (path: string) => {
         if (path.startsWith('browser/')) {
             return path;
         }
         return `browser/${path}`;
     }
 
-    contentImport = async (stdUrl) => {
+    contentImport = async (stdUrl: string) => {
         return await this.client.call('contentImport', 'resolve', stdUrl)
     }
 
-    listenOnCompilationFinishedEvent = async (callback) => {
+    listenOnCompilationFinishedEvent = async (callback: any) => {
         await this.client.onload();
         this.client.on('solidity', 'compilationFinished', (target, source, _version, data) => {
             callback({ 
@@ -75,17 +79,16 @@ export class RemixClient extends PluginClient {
         return await this.client.call('network', 'detectNetwork')
     }
 
-    fetchAndSave = async (address, chain) => {
-        const result = await this.fetch(address, chain) 
+    fetchAndSave = async (address: string, chain: any) => {
+        const result: any = await this.fetch(address, chain) 
         await this.saveFetchedToRemix(result.metadata, result.contract, address)       
     }
 
-    fetchFiles = async (network, address) => {
-        let response;
+    fetchFiles = async (chain: any, address: string) => {
+        let response: any;
 
         try{
-            console.log(`${SERVER_URL}/files/${network.name.toLowerCase()}/${address}`)
-            response = await axios.get(`${SERVER_URL}/files/${network.name.toLowerCase()}/${address}`)
+            response = await axios.get(`${SERVER_URL}/files/${chain.name}/${address}`)
         } catch(err) {
             response = err.response;
         }
@@ -93,23 +96,26 @@ export class RemixClient extends PluginClient {
         return response;
     }
 
-    fetch = async (address, chain) => {
+    fetchByNetwork = async(address: string) => {
         return new Promise(async (resolve, reject) => {   
-                console.log(chain);
-                let network = await this.detectNetwork()
 
-                console.log(network)
-                // Use version from plugin if vm is used inside Remix or there is no network at all
-                if(typeof network === "undefined" || network.id === "-" ) {
-                    network.name = chain.name;
-                    network.id = chain.id 
-                }
-                
-                console.log(network)
-                let response = await this.fetchFiles(network, address);
+            let chain = await this.detectNetwork()
+
+            // Use version from plugin if vm is used inside Remix or there is no network at all
+            if(typeof chain === "undefined" || chain.id === "-" ) {
+                return reject({info: `No a valid network ${chain}`}) 
+            }
+
+            return resolve(await this.fetch(address, chain));
+        })
+    }
+
+    fetch = async (address: string, chain: any) => {
+        return new Promise(async (resolve, reject) => {   
+                let response = await this.fetchFiles(chain, address);
                 
                 if(response.data.error) {
-                    return reject({info: `${response.data.error}. Network: ${network.name}`}) 
+                    return reject({info: `${response.data.error}. Network: ${chain.name}`}) 
                 }
             
                 let metadata;
@@ -123,12 +129,16 @@ export class RemixClient extends PluginClient {
                     }
                 };
 
-                console.log({ "metadata": metadata, "contract": contract });
-                resolve({ "metadata": metadata, "contract": contract });
+                let fetchResult: FetchResult;
+                fetchResult.contract = contract;
+                fetchResult.metadata = metadata;
+
+                console.log(fetchResult);
+                return resolve(fetchResult);
         });
     }
 
-    saveFetchedToRemix = async (metadata, contract, address) => {
+    saveFetchedToRemix = async (metadata: any, contract: any, address: string) => {
             this.createFile(`/verified-sources/${address}/metadata.json`, JSON.stringify(metadata, null, '\t'))
             let switched = false
             for (let file in metadata['sources']) {
@@ -147,9 +157,23 @@ export class RemixClient extends PluginClient {
             }
     }
 
-
-    verify = async (formData) => {
+    verifyByForm = async (formData: any) => {
         return axios.post(`${SERVER_URL}`, formData);
+    } 
+
+
+    //TODO: finish 
+    verify = async (address: string, chain: any, files: any) => {
+        // const sol = new File([data.source], data.target.replace("browser/", ""), { type: "text/plain" });
+        // const metadata = new File([contract.metadata], "metadata.json", { type: "text/plain" });
+        const formData = new FormData();
+        formData.append("address", address);
+        formData.append("chain", chain);
+        // files.forEach(file => {
+        //     const localFile = new File([])
+        //     formData.append('files', file)
+        // });
+        return this.verifyByForm(formData);
     }
 }
 
