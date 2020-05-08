@@ -1,5 +1,4 @@
 import React, { useState, useReducer } from "react";
-import { ContractForm } from "../common/form/ContractForm";
 import { Alert, Spinner } from "../common";
 import { REPOSITORY_URL, chainOptions } from '../../common/Constants';
 import { useStateContext, useDispatchContext } from "../../state/Store";
@@ -75,8 +74,8 @@ export const VerifyContract: React.FC = () => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
 
-    if (!state.isListening) {
-        remixClient.listenOnCompilationFinishedEvent((data) => {
+    if (state.isListening) {
+        remixClient.listenOnCompilationFinishedEvent((data: any) => {
             console.log(data);
             const contract = data.contract[Object.keys(data.contract)[0]];
     
@@ -85,12 +84,13 @@ export const VerifyContract: React.FC = () => {
     
             dispatch({ type: 'set_files', payload: [sol, metadata] });
         });
-        dispatch({type: 'set_listening', payload: true });
     }
 
 
     const onSubmit = async (e: any) => {
         e.preventDefault();
+        dispatch({ type: 'set_error', payload: null} );
+        dispatchContext({ type: 'set_verification_result', payload: null} );
         dispatch({ type: 'set_loading', payload: true })
 
         const formData = new FormData();
@@ -99,26 +99,23 @@ export const VerifyContract: React.FC = () => {
         formData.append('chain', state.chain.id.toString());
 
         if (state.files.length > 0) {
-            state.files.forEach(file => formData.append('files', file));
+            state.files.forEach((file: any) => formData.append('files', file));
         }
 
-
         try{
-            const response = await remixClient.verifyByForm(formData)
+            //const response: any = await remixClient.verifyByForm(formData)
+            const response: any = await remixClient.verify(state.address, state.chain.id.toString(), state.files); // To test verify
             dispatchContext({ type: 'set_verification_result', payload: response} );
             dispatch({ type: 'set_loading', payload: false });
         } catch(e) {
-            dispatch({ type: 'set_error', payload: e.toString()} );
+            console.log(e.response);
+            dispatch({ type: 'set_error', payload: e.response.data.error} );
             dispatch({ type: 'set_loading', payload: false });
         }
     }
 
     return (
-        <div className="card m-2">
-            <div className="card-body text-center p-3">
-                <div className="card-header">
-                    <h6 className="card-title m-0">Decentralized Metadata and Source Code Repository</h6>
-                </div>
+        <div>
                 <p className="card-text my-2">
                     Upload metadata and source files of your contract to make it available.
                     Note that the metadata file has to be exactly the same as at deploy time. Browse repository <a href={`${REPOSITORY_URL}`}>here</a> or via <a href="https://gateway.ipfs.io/ipns/QmNmBr4tiXtwTrHKjyppUyAhW1FQZMJTdnUrksA9hapS4u">ipfs/ipns gateway.</a>
@@ -139,7 +136,7 @@ export const VerifyContract: React.FC = () => {
 
                             {state.files.length > 0 &&
                             <>
-                            <h6>Files</h6>
+                            <h5>Files</h5>
                             <ul className="text-center list-unstyled border my-2 p-1">
                             {state.files.map(file => <li key={file.name}>{file.name}</li>)}
                             </ul>
@@ -154,16 +151,16 @@ export const VerifyContract: React.FC = () => {
                                    </Alert>
                 }
                 {
-                    stateContext.verificationResult.length && (
+                    stateContext.verificationResult && !state.error && (
                         <Alert type={'success'} heading='Contract successfully verified!'>
                             <p className="m-0 mt-2">
-                                View the assets in the <a target="_blank" rel="noopener noreferrer" href={`${REPOSITORY_URL}contract/${state.chain.name}/${stateContext.verificationResult[0].address}`}> file explorer.
+                                View the assets in the <a target="_blank" rel="noopener noreferrer" href={`${REPOSITORY_URL}contract/${state.chain.id}/${stateContext.verificationResult[0].address}`}> file explorer.
                             </a>
                             </p>
-                            {
-                                stateContext.verificationResult.length > 1 &&
-                                <p>Found {stateContext.verificationResult.length} addresses of this contract: {stateContext.verificationResult.join(', ')}</p>
-                            }
+                            {/* {
+                                stateContext.verificationResult &&
+                                <p>Found {stateContext.verificationResult.length} addresses of this contract: {stateContext.verificationResult[0].address}</p>
+                            } */}
                         </Alert>
                     )
                 }
@@ -171,7 +168,6 @@ export const VerifyContract: React.FC = () => {
                     href="https://github.com/ethereum/source-verify/">GitHub</a>
                 </p>
                 <p className="m-0">Feel free to open issues or contribute.</p>
-            </div>
         </div>
     )
 };

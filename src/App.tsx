@@ -26,7 +26,7 @@ const App: React.FC = () => {
             <main role="main">
                 <Accordion>
                     <AccordionElement
-                        headerText="Fetcher"
+                        headerText="Contract Fetcher"
                         iconClass="fa fa-refresh"
                         eventKey="0"> 
                         <ContractFetcher/>

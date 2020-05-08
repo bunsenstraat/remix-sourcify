@@ -2,21 +2,21 @@ import {connectIframe, listenOnThemeChanged} from '@remixproject/plugin';
 import { Api, createIframeClient, PluginClient, RemixApi } from '@remixproject/plugin';
 import axios from 'axios';
 import { SERVER_URL } from '../common/Constants';
-import { FetchResult } from '../state/types';
+import { FetchResult, VerificationResult } from '../state/types';
 
 export class RemixClient extends PluginClient {
 
-    private client: PluginClient<any> = createIframeClient<Api, RemixApi>();
+    public client: any;
 
     constructor() {
         super();
         this.methods = ["fetch", "verify"];
-        connectIframe(this.client);
-        listenOnThemeChanged(this.client);
+        connectIframe(this);
+        listenOnThemeChanged(this);
+        this.client = this;
     }
 
     createClient = () => {
-        console.log("Loading client")
         return this.client.onload();
     }
 
@@ -88,7 +88,7 @@ export class RemixClient extends PluginClient {
         let response: any;
 
         try{
-            response = await axios.get(`${SERVER_URL}/files/${chain.name}/${address}`)
+            response = await axios.get(`${SERVER_URL}/files/${chain.id}/${address}`)
         } catch(err) {
             response = err.response;
         }
@@ -118,22 +118,22 @@ export class RemixClient extends PluginClient {
                     return reject({info: `${response.data.error}. Network: ${chain.name}`}) 
                 }
             
-                let metadata;
-                let contract;
+                console.log(response);
+
+                let fetchResult: FetchResult = {
+                    metadata:'',
+                    contract:'',
+                };
+
                 for(let i in response.data){
                     const file = response.data[i];
                     if(file.name.endsWith('json')){
-                        metadata = JSON.parse(file.content);
+                        fetchResult.metadata = JSON.parse(file.content);
                     } else if (file.name.endsWith('sol')){
-                        contract = file.content;
+                        fetchResult.contract = file.content;
                     }
                 };
 
-                let fetchResult: FetchResult;
-                fetchResult.contract = contract;
-                fetchResult.metadata = metadata;
-
-                console.log(fetchResult);
                 return resolve(fetchResult);
         });
     }
@@ -158,22 +158,34 @@ export class RemixClient extends PluginClient {
     }
 
     verifyByForm = async (formData: any) => {
-        return axios.post(`${SERVER_URL}`, formData);
+        return await axios.post(`${SERVER_URL}`, formData)
     } 
 
 
-    //TODO: finish 
-    verify = async (address: string, chain: any, files: any) => {
-        // const sol = new File([data.source], data.target.replace("browser/", ""), { type: "text/plain" });
-        // const metadata = new File([contract.metadata], "metadata.json", { type: "text/plain" });
+    verify = async (address: string, chain: string, files: any) => {
         const formData = new FormData();
-        formData.append("address", address);
-        formData.append("chain", chain);
-        // files.forEach(file => {
-        //     const localFile = new File([])
-        //     formData.append('files', file)
-        // });
-        return this.verifyByForm(formData);
+
+        formData.append('address', address);
+        formData.append('chain', chain);
+
+        if (files.length > 0) {
+            files.forEach((file: any) => formData.append('files', file));
+        }
+
+        const verifyResult: VerificationResult = [{
+            address: '',
+            status: ''
+        }]
+
+        let response = await this.verifyByForm(formData);
+
+        verifyResult[0].address = response.data.result[0].address;
+        verifyResult[0].status = response.data.result[0].status;
+
+        // console.log("VerifyResult:" + JSON.stringify(verifyResult));
+        // console.log(response);
+
+        return verifyResult;
     }
 }
 

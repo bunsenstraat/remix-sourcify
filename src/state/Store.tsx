@@ -13,7 +13,7 @@ export interface IState {
 const initialState = {
     isLoaded: false,
     fetchResult: null,
-    verificationResult: [{}]
+    verificationResult: null
 } as IState;
 
 const StateContext = createContext<Partial<IState>>(initialState);

@@ -71,18 +71,16 @@ export const ContractFetcher: React.FC = () => {
             await remixClient.saveFetchedToRemix(response.metadata, response.contract, state.address)
             dispatchContext(onFetched(response));
             dispatch({ type: 'set_loading', payload: false });
+            dispatch({ type: 'set_error',  payload: null });
         } catch (e) {
-            dispatch({ type: 'set_error',  payload: e.toString() });
+            console.log("Error" + JSON.stringify(e));
+            dispatch({ type: 'set_error',  payload: e });
             dispatch({ type: 'set_loading', payload: false });
         }
     };
     
     return (
-        <div className="card m-2">
-            <div className="card-body text-center p-3">
-                <div className="card-header">
-                    <h6 className="card-title m-0">Contract Fetcher</h6>
-                </div>
+        <div>
                 <p className="card-text my-2 mb-3">Input a valid contract address and load the source code in Remix (Please make sure the correct network is selected)).</p>
                     <form className="d-flex flex-column" onSubmit={onSubmit}>
                         <Dropdown 
@@ -103,16 +101,15 @@ export const ContractFetcher: React.FC = () => {
                     state.isLoading && <Spinner />
                 }
                 {
-                    state.error && <Alert type={'danger'} heading={state.error}>
+                    state.error && <Alert type={'danger'} heading={state.error.info}>
                                    </Alert>
                 }
                 {
-                    stateContext.fetchResult && (
+                    !state.error && stateContext.fetchResult && (
                         <Alert type={'success'} heading='Contract successfully fetched!'>
                         </Alert>
                     )
                 }
-            </div>
         </div>
     )
 }
