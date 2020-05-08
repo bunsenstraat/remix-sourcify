@@ -37,16 +37,9 @@ const App: React.FC = () => {
                         eventKey="1"> 
                         <VerifyContract/>
                     </AccordionElement>
-                    {/* <AccordionElement
-                        headerText="Advanced config"
-                        iconClass="fa fa-refresh"
-                        eventKey="2"> 
-                        <Configuration/>
-                    </AccordionElement> */}
                 </Accordion>
             </main>    
         </Container>
-        {/* <Footer isLoaded={state.isLoaded}></Footer>       */}
       </div>
   )
 }
