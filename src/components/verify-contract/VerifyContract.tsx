@@ -5,6 +5,7 @@ import { useStateContext, useDispatchContext } from "../../state/Store";
 import { remixClient } from "../../remix/RemixClient";
 import { AddressInput } from "../common/form/AddressInput"
 import { Dropdown } from "../common/form/Dropdown"
+import { VerificationResult } from "../../state/types";
 
 export type IVerifyState = {
     isLoading: boolean,
@@ -102,17 +103,17 @@ export const VerifyContract: React.FC = () => {
             state.files.forEach((file: any) => formData.append('files', file));
         }
 
-        try{
-            //const response: any = await remixClient.verifyByForm(formData)
-            const response: any = await remixClient.verify(state.address, state.chain.id.toString(), state.files); // To test verify
-            dispatchContext({ type: 'set_verification_result', payload: response} );
-            dispatch({ type: 'set_loading', payload: false });
-        } catch(e) {
-            console.log(e.response);
-            dispatch({ type: 'set_error', payload: e.response.data.error} );
-            dispatch({ type: 'set_loading', payload: false });
+            const response: VerificationResult = await remixClient.verifyByForm(formData)
+            //const response: VerificationResult = await remixClient.verify(state.address, state.chain.id.toString(), state.files); // To test verify
+            if(response[0].status === 'no match'){
+                dispatch({ type: 'set_error', payload: response[0].message} );
+                dispatch({ type: 'set_loading', payload: false }); 
+            } else {
+                dispatchContext({ type: 'set_verification_result', payload: response} );
+                dispatch({ type: 'set_loading', payload: false });
+            }
+          
         }
-    }
 
     return (
         <div>

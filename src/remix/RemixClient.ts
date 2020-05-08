@@ -158,34 +158,38 @@ export class RemixClient extends PluginClient {
     }
 
     verifyByForm = async (formData: any) => {
-        return await axios.post(`${SERVER_URL}`, formData)
+        const verifyResult: VerificationResult = [{
+            address: formData.get('address'),
+            status: '',
+            message: ''
+        }]
+
+        let response; 
+        try {
+            response = await axios.post(`${SERVER_URL}`, formData)
+            verifyResult[0].status =  response.data.result[0].status;
+            verifyResult[0].message = 'Successfully verified';
+        } catch(e) {
+            verifyResult[0].status = 'no match';
+            verifyResult[0].message = e.response.data.error;
+        }
+
+        return verifyResult;
     } 
 
 
-    verify = async (address: string, chain: string, files: any) => {
+    verify = async (address: string, chain: string | number, files: any) => {
         const formData = new FormData();
 
         formData.append('address', address);
-        formData.append('chain', chain);
+        formData.append('chain', chain.toString());
 
         if (files.length > 0) {
             files.forEach((file: any) => formData.append('files', file));
         }
 
-        const verifyResult: VerificationResult = [{
-            address: '',
-            status: ''
-        }]
-
-        let response = await this.verifyByForm(formData);
-
-        verifyResult[0].address = response.data.result[0].address;
-        verifyResult[0].status = response.data.result[0].status;
-
-        // console.log("VerifyResult:" + JSON.stringify(verifyResult));
-        // console.log(response);
-
-        return verifyResult;
+       
+        return await this.verifyByForm(formData);
     }
 }
 

@@ -11,7 +11,8 @@ export type FetchData = {
 
 export type VerificationResult = [{
     address: string,
-    status: string
+    status: string,
+    message: string
 }]
 
 export type VerifyData = {
