@@ -10,7 +10,7 @@ export class RemixClient extends PluginClient {
 
     constructor() {
         super();
-        this.methods = ["fetch", "verify"];
+        this.methods = ["fetch", "verify", "fetchByNetwork", "verifyByNetwork", "verifyByForm"];
         connectIframe(this);
         listenOnThemeChanged(this);
         this.client = this;
@@ -80,7 +80,7 @@ export class RemixClient extends PluginClient {
     }
 
     fetchAndSave = async (address: string, chain: any) => {
-        const result: any = await this.fetch(address, chain) 
+        const result: any = await this.fetchByNetwork(address, chain) 
         await this.saveFetchedToRemix(result.metadata, result.contract, address)       
     }
 
