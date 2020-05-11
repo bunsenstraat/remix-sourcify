@@ -67,7 +67,7 @@ export const ContractFetcher: React.FC = () => {
         dispatch({ type: 'set_loading', payload: true });
 
         try {
-            const response: any = await remixClient.fetch(state.address, state.chain)
+            const response: any = await remixClient.fetchByNetwork(state.address, state.chain)
             await remixClient.saveFetchedToRemix(response.metadata, response.contract, state.address)
             dispatchContext(onFetched(response));
             dispatch({ type: 'set_loading', payload: false });

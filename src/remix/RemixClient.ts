@@ -96,7 +96,7 @@ export class RemixClient extends PluginClient {
         return response;
     }
 
-    fetchByNetwork = async(address: string) => {
+    fetch = async(address: string) => {
         return new Promise(async (resolve, reject) => {   
 
             let chain = await this.detectNetwork()
@@ -106,11 +106,11 @@ export class RemixClient extends PluginClient {
                 return reject({info: `No a valid network ${chain}`}) 
             }
 
-            return resolve(await this.fetch(address, chain));
+            return resolve(await this.fetchByNetwork(address, chain));
         })
     }
 
-    fetch = async (address: string, chain: any) => {
+    fetchByNetwork = async (address: string, chain: any) => {
         return new Promise(async (resolve, reject) => {   
                 let response = await this.fetchFiles(chain, address);
                 
@@ -177,7 +177,7 @@ export class RemixClient extends PluginClient {
         return verifyResult;
     } 
 
-    verifyByNetwork = async (address: string, files: any) => {
+    verify = async (address: string, files: any) => {
         let chain = await this.detectNetwork()
 
         // Use version from plugin if vm is used inside Remix or there is no network at all
@@ -189,10 +189,10 @@ export class RemixClient extends PluginClient {
             }]        
         }
 
-        return await this.verify(address, chain, files);
+        return await this.verifyByNetwork(address, chain, files);
     }
 
-    verify = async (address: string, chain: string | number, files: any) => {
+    verifyByNetwork = async (address: string, chain: string | number, files: any) => {
         const formData = new FormData();
 
         formData.append('address', address);
