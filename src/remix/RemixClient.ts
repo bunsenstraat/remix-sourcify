@@ -164,7 +164,7 @@ export class RemixClient extends PluginClient {
             message: ''
         }]
 
-        let response; 
+        let response: any; 
         try {
             response = await axios.post(`${SERVER_URL}`, formData)
             verifyResult[0].status =  response.data.result[0].status;
@@ -177,6 +177,20 @@ export class RemixClient extends PluginClient {
         return verifyResult;
     } 
 
+    verifyByNetwork = async (address: string, files: any) => {
+        let chain = await this.detectNetwork()
+
+        // Use version from plugin if vm is used inside Remix or there is no network at all
+        if(typeof chain === "undefined" || chain.id === "-" ) {
+            return [{
+                address: address,
+                status: 'no_match',
+                message: 'invalid_network'
+            }]        
+        }
+
+        return await this.verify(address, chain, files);
+    }
 
     verify = async (address: string, chain: string | number, files: any) => {
         const formData = new FormData();
