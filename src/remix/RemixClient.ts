@@ -10,7 +10,7 @@ export class RemixClient extends PluginClient {
 
     constructor() {
         super();
-        this.methods = ["fetch", "verify", "fetchByNetwork", "verifyByNetwork", "verifyByForm"];
+        this.methods = ["fetch", "fetchAndSave", "fetchByNetwork", "verify", "verifyByNetwork"];
         connectIframe(this);
         listenOnThemeChanged(this);
         this.client = this;
@@ -52,7 +52,7 @@ export class RemixClient extends PluginClient {
         await this.client.call('fileManager', 'switchFile', name)
     }
 
-    getBrowserPath = (path: string) => {
+    getBrowserPath = (path: string): string => {
         if (path.startsWith('browser/')) {
             return path;
         }
@@ -79,9 +79,10 @@ export class RemixClient extends PluginClient {
         return await this.client.call('network', 'detectNetwork')
     }
 
-    fetchAndSave = async (address: string, chain: any) => {
-        const result: any = await this.fetchByNetwork(address, chain) 
-        await this.saveFetchedToRemix(result.metadata, result.contract, address)       
+    fetchAndSave = async (address: string, chain: any): Promise<FetchResult>  => {
+        const result: FetchResult = await this.fetchByNetwork(address, chain) 
+        await this.saveFetchedToRemix(result.metadata, result.contract, address)
+        return result;
     }
 
     fetchFiles = async (chain: any, address: string) => {
@@ -96,7 +97,7 @@ export class RemixClient extends PluginClient {
         return response;
     }
 
-    fetch = async(address: string) => {
+    fetch = async(address: string): Promise<FetchResult> => {
         return new Promise(async (resolve, reject) => {   
 
             let chain = await this.detectNetwork()
@@ -110,7 +111,7 @@ export class RemixClient extends PluginClient {
         })
     }
 
-    fetchByNetwork = async (address: string, chain: any) => {
+    fetchByNetwork = async (address: string, chain: any): Promise<FetchResult> => {
         return new Promise(async (resolve, reject) => {   
                 let response = await this.fetchFiles(chain, address);
                 
@@ -157,7 +158,7 @@ export class RemixClient extends PluginClient {
             }
     }
 
-    verifyByForm = async (formData: any) => {
+    verifyByForm = async (formData: any): Promise<VerificationResult> => {
         const verifyResult: VerificationResult = [{
             address: formData.get('address'),
             status: '',
@@ -177,7 +178,7 @@ export class RemixClient extends PluginClient {
         return verifyResult;
     } 
 
-    verify = async (address: string, files: any) => {
+    verify = async (address: string, files: any): Promise<VerificationResult> => {
         let chain = await this.detectNetwork()
 
         // Use version from plugin if vm is used inside Remix or there is no network at all
@@ -192,7 +193,7 @@ export class RemixClient extends PluginClient {
         return await this.verifyByNetwork(address, chain, files);
     }
 
-    verifyByNetwork = async (address: string, chain: string | number, files: any) => {
+    verifyByNetwork = async (address: string, chain: string | number, files: any): Promise<VerificationResult> => {
         const formData = new FormData();
 
         formData.append('address', address);
