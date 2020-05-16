@@ -89,7 +89,7 @@ export class RemixClient extends PluginClient {
         let response: any;
 
         try{
-            response = await axios.get(`${SERVER_URL}/files/${chain.id}/${address}`)
+            response = await axios.get(`${SERVER_URL}/files/${chain}/${address}`)
         } catch(err) {
             response = err.response;
         }
@@ -107,7 +107,8 @@ export class RemixClient extends PluginClient {
                 return reject({info: `No a valid network ${chain}`}) 
             }
 
-            return resolve(await this.fetchByNetwork(address, chain));
+            let fetchResult: FetchResult = await this.fetchByNetwork(address, chain.id);
+            return resolve(fetchResult);
         })
     }
 
@@ -116,11 +117,10 @@ export class RemixClient extends PluginClient {
                 let response = await this.fetchFiles(chain, address);
                 
                 if(response.data.error) {
-                    return reject({info: `${response.data.error}. Network: ${chain.name}`}) 
+                    console.log(response.data.error);
+                    return reject({info: `${response.data.error}. Network: ${chain}`}) 
                 }
             
-                console.log(response);
-
                 let fetchResult: FetchResult = {
                     metadata:'',
                     contract:'',
@@ -172,7 +172,7 @@ export class RemixClient extends PluginClient {
             verifyResult[0].message = 'Successfully verified';
         } catch(e) {
             verifyResult[0].status = 'no match';
-            verifyResult[0].message = e.response.data.error;
+            verifyResult[0].message = JSON.stringify(e.response.data.error);
         }
 
         return verifyResult;
@@ -190,7 +190,7 @@ export class RemixClient extends PluginClient {
             }]        
         }
 
-        return await this.verifyByNetwork(address, chain, files);
+        return await this.verifyByNetwork(address, chain.id, files);
     }
 
     verifyByNetwork = async (address: string, chain: string | number, files: any): Promise<VerificationResult> => {

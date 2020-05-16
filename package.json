@@ -1,11 +1,11 @@
 {
   "name": "remix-contract-getter",
   "author": "edi@shardlabs.io",
-  "version": "0.1.8-beta",
+  "version": "0.2.1-beta",
   "description": "Source metadata fetcher and validator",
   "scripts": {
     "dev": "webpack-dev-server --open --config webpack.dev.js",
-    "build": "npm install && rimraf dist && webpack --config webpack.prod.js",
+    "build": "npm install && rimraf dist/ && webpack --config webpack.prod.js",
     "serve": "serve -l 3000 dist/",
     "start": "npm run build && npm run serve"
   },
