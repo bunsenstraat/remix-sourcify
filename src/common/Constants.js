@@ -1,4 +1,4 @@
-export const REPOSITORY_URL = "https://contractrepo.verify.shardlabs.io/repository";
+export const REPOSITORY_URL = "https://contractrepostaging.komputing.org/contract";
 
 export const SERVER_URL = "https://verificationstaging.komputing.org/server";
     

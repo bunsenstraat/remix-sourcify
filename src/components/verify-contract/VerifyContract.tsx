@@ -155,7 +155,7 @@ export const VerifyContract: React.FC = () => {
                     stateContext.verificationResult && !state.error && (
                         <Alert type={'success'} heading='Contract successfully verified!'>
                             <p className="m-0 mt-2">
-                                View the assets in the <a target="_blank" rel="noopener noreferrer" href={`${REPOSITORY_URL}contract/${state.chain.id}/${stateContext.verificationResult[0].address}`}> file explorer.
+                                View the assets in the <a target="_blank" rel="noopener noreferrer" href={`${REPOSITORY_URL}/${state.chain.id}/${stateContext.verificationResult[0].address}`}> file explorer.
                             </a>
                             </p>
                             {/* {
