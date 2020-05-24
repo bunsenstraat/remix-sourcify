@@ -1,6 +1,6 @@
-export const REPOSITORY_URL = "https://contractrepostaging.komputing.org/contract";
+export const REPOSITORY_URL = "https://contractrepo.komputing.org/contract";
 
-export const SERVER_URL = "https://verificationstaging.komputing.org/server";
+export const SERVER_URL = "https://verification.komputing.org/server";
     
 export const chainOptions = [
         { name: 'mainnet', label: 'Ethereum Mainnet', id: 1 },
