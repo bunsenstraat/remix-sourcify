@@ -1,24 +1,26 @@
 import React from 'react';
-import { Card, Accordion } from "react-bootstrap"
+import { Card, Accordion } from "react-bootstrap";
+import { ChevronDownIcon } from '../icons/Icons';
+
 
 export type AccordionElementProps = {
     headerText: string,
-    iconClass: string, 
     eventKey: string,
     disabled?: boolean;
 }
 
 export type Props = React.PropsWithChildren<AccordionElementProps>;
 
-export const AccordionElement: React.FC<Props> = ({ headerText, iconClass, eventKey, disabled, children }) => (
+export const AccordionElement: React.FC<Props> = ({ headerText, eventKey, disabled, children }) => (
     <Card>
         {disabled ? 
         <Card.Header className="text-secondary default-cursor">
-            <i className={iconClass + " mr-2"} aria-hidden="true"></i>{headerText}
+            {headerText}
         </Card.Header> :
         <>
-            <Accordion.Toggle as={Card.Header} eventKey={eventKey}>
-                <i className={iconClass + " mr-2"} aria-hidden="true"></i>{headerText}
+            <Accordion.Toggle className="d-flex justify-content-between" as={Card.Header} eventKey={eventKey}>
+                <span>{headerText}</span>
+                <ChevronDownIcon />
             </Accordion.Toggle>
             <Accordion.Collapse eventKey={eventKey}>
                 <Card.Body>

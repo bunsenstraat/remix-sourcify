@@ -119,10 +119,10 @@ export const VerifyContract: React.FC = () => {
         <div>
                 <p className="card-text my-2">
                     Upload metadata and source files of your contract to make it available.
-                    Note that the metadata file has to be exactly the same as at deploy time. Browse repository <a href={`${REPOSITORY_URL}`}>here</a> or via <a href="https://gateway.ipfs.io/ipns/QmNmBr4tiXtwTrHKjyppUyAhW1FQZMJTdnUrksA9hapS4u">ipfs/ipns gateway.</a>
+                    Note that the metadata file has to be exactly the same as at deploy time. Browse repository <a href={`${REPOSITORY_URL}`} target="_blank" rel="noopener noreferrer" >here</a> or via <a href="https://gateway.ipfs.io/ipns/QmNmBr4tiXtwTrHKjyppUyAhW1FQZMJTdnUrksA9hapS4u" target="_blank" rel="noopener noreferrer" >ipfs/ipns gateway.</a>
                 </p>
                 <p className="mb-3">Also if you have any question join us on <a
-                    href='https://gitter.im/ethereum/source-verify'>Gitter.</a></p>
+                    href="https://gitter.im/ethereum/source-verify" target="_blank" rel="noopener noreferrer" >Gitter.</a></p>
                         <form className="d-flex flex-column" onSubmit={onSubmit}>
                             <Dropdown 
                                 chainOptions={chainOptions}
@@ -155,7 +155,7 @@ export const VerifyContract: React.FC = () => {
                     stateContext.verificationResult && !state.error && (
                         <Alert type={'success'} heading='Contract successfully verified!'>
                             <p className="m-0 mt-2">
-                                View the assets in the <a target="_blank" rel="noopener noreferrer" href={`${REPOSITORY_URL}/${state.chain.id}/${stateContext.verificationResult[0].address}`}> file explorer.
+                                View the assets in the <a href={`${REPOSITORY_URL}/${state.chain.id}/${stateContext.verificationResult[0].address}`} target="_blank" rel="noopener noreferrer" > file explorer.
                             </a>
                             </p>
                             {/* {
@@ -166,7 +166,7 @@ export const VerifyContract: React.FC = () => {
                     )
                 }
                 <p className="my-1">Source code: <a
-                    href="https://github.com/ethereum/source-verify/">GitHub</a>
+                    href="https://github.com/ethereum/sourcify" target="_blank" rel="noopener noreferrer" >GitHub</a>
                 </p>
                 <p className="m-0">Feel free to open issues or contribute.</p>
         </div>

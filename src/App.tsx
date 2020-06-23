@@ -5,6 +5,7 @@ import { ContractFetcher } from "./components/contract-fetcher/ContractFetcher";
 // import { Configuration } from './components/configuration/Configuration';
 import { remixClient } from './remix/RemixClient';
 import { Accordion, AccordionElement } from './components/common';
+import './App.css';
 
 
 const App: React.FC = () => {
@@ -27,13 +28,11 @@ const App: React.FC = () => {
                 <Accordion>
                     <AccordionElement
                         headerText="Contract Fetcher"
-                        iconClass="fa fa-refresh"
                         eventKey="0"> 
                         <ContractFetcher/>
                     </AccordionElement>
                     <AccordionElement
                         headerText="Verifier"
-                        iconClass="fa fa-refresh"
                         eventKey="1"> 
                         <VerifyContract/>
                     </AccordionElement>
