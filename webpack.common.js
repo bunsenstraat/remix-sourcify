@@ -34,7 +34,7 @@ module.exports = {
     output: {
         filename: '[name].[hash].js',
         path: path.resolve(__dirname, 'dist/'),
-        publicPath: "/"
+        publicPath: "./"
     },
     plugins: [
         new CopyPlugin([
