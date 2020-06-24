@@ -117,58 +117,64 @@ export const VerifyContract: React.FC = () => {
 
     return (
         <div>
-                <p className="card-text my-2">
-                    Upload metadata and source files of your contract to make it available.
-                    Note that the metadata file has to be exactly the same as at deploy time. Browse repository <a href={`${REPOSITORY_URL}`} target="_blank" rel="noopener noreferrer" >here</a> or via <a href="https://gateway.ipfs.io/ipns/QmNmBr4tiXtwTrHKjyppUyAhW1FQZMJTdnUrksA9hapS4u" target="_blank" rel="noopener noreferrer" >ipfs/ipns gateway.</a>
-                </p>
-                <p className="mb-3">Also if you have any question join us on <a
-                    href="https://gitter.im/ethereum/source-verify" target="_blank" rel="noopener noreferrer" >Gitter.</a></p>
-                        <form className="d-flex flex-column" onSubmit={onSubmit}>
-                            <Dropdown 
-                                chainOptions={chainOptions}
-                                chain={state.chain}
-                                 setChain={(chain: any) => dispatch({ type: 'set_chain', payload: chain })} />
-                            <AddressInput 
-                                setAddress={(address: string) => dispatch({ type: 'set_address', payload: address })} />
-                            <button 
-                                type="submit" 
-                                className="btn btn-primary my-2" 
-                                disabled={!state.address}>Verify</button>
-
-                            {state.files.length > 0 &&
-                            <>
-                            <h5>Files</h5>
-                            <ul className="text-center list-unstyled border my-2 p-1">
+            <p className="card-text my-2">
+                Uploads, verifies & publishes a deployed contract's metadata and source files.
+            </p>
+            <p className="card-text my-2">
+                Note: the metadata must be exactly the same as at deployment time
+            </p>
+            <p className="card-text my-2">
+                Browse repository <a href={`${REPOSITORY_URL}`} target="_blank" rel="noopener noreferrer" >here</a> or via <a href="https://gateway.ipfs.io/ipns/QmNmBr4tiXtwTrHKjyppUyAhW1FQZMJTdnUrksA9hapS4u" target="_blank" rel="noopener noreferrer" >ipfs/ipns gateway.</a>
+            </p>
+            <form className="d-flex flex-column" onSubmit={onSubmit}>
+                <Dropdown 
+                    chainOptions={chainOptions}
+                    chain={state.chain}
+                     setChain={(chain: any) => dispatch({ type: 'set_chain', payload: chain })} />
+                <AddressInput 
+                    setAddress={(address: string) => dispatch({ type: 'set_address', payload: address })} />
+                <button 
+                    type="submit" 
+                    className="btn btn-primary my-2" 
+                    disabled={!state.address}>Verify</button>
+                {
+                    state.files.length > 0 &&
+                    <>
+                        <label className="text-muted mt-2">FILES</label>
+                        <ul className="border p-2 d-flex flex-column text-muted align-items-center">
                             {state.files.map(file => <li key={file.name}>{file.name}</li>)}
-                            </ul>
-                            </>
+                        </ul>
+                    </>
                 }
-        </form>
-                {
-                    state.isLoading && <Spinner />
-                }
-                {
-                    state.error && <Alert type={'danger'} heading={state.error}>
-                                   </Alert>
-                }
-                {
-                    stateContext.verificationResult && !state.error && (
-                        <Alert type={'success'} heading='Contract successfully verified!'>
-                            <p className="m-0 mt-2">
-                                View the assets in the <a href={`${REPOSITORY_URL}/${state.chain.id}/${stateContext.verificationResult[0].address}`} target="_blank" rel="noopener noreferrer" > file explorer.
-                            </a>
-                            </p>
-                            {/* {
-                                stateContext.verificationResult &&
-                                <p>Found {stateContext.verificationResult.length} addresses of this contract: {stateContext.verificationResult[0].address}</p>
-                            } */}
-                        </Alert>
-                    )
-                }
-                <p className="my-1">Source code: <a
-                    href="https://github.com/ethereum/sourcify" target="_blank" rel="noopener noreferrer" >GitHub</a>
-                </p>
-                <p className="m-0">Feel free to open issues or contribute.</p>
+            </form>
+            {
+                state.isLoading && <Spinner />
+            }
+            {
+                state.error && <Alert type={'danger'} heading={state.error}>
+                               </Alert>
+            }
+            {
+                stateContext.verificationResult && !state.error && (
+                    <Alert type={'success'} heading='Contract successfully verified!'>
+                        <p className="m-0 mt-2">
+                            View the verified assets in the <a href={`${REPOSITORY_URL}/${state.chain.id}/${stateContext.verificationResult[0].address}`} target="_blank"rel="noopener noreferrer" > Contract Repo.
+                        </a>
+                        </p>
+                        {/* {
+                            stateContext.verificationResult &&
+                            <p>Found {stateContext.verificationResult.length} addresses of this contract: {stateContext.verificationResult[0].address}</p>
+                        } */}
+                    </Alert>
+                )
+            }
+            <p className="my-1">Questions: <a
+                href="https://gitter.im/ethereum/source-verify" target="_blank" rel="noopener noreferrer" >Gitter</a>
+            </p>
+            <p className="my-1">Source code: <a
+                href="https://github.com/ethereum/sourcify" target="_blank" rel="noopener noreferrer" >GitHub</a>
+            </p>
+            <p className="m-0">Feel free to contribute.</p>
         </div>
     )
 };
