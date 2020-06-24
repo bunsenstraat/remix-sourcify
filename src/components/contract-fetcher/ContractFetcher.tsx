@@ -81,7 +81,7 @@ export const ContractFetcher: React.FC = () => {
     
     return (
         <div>
-                <p className="card-text my-2 mb-3">Input a valid contract address and load the source code in Remix (Please make sure the correct network is selected)).</p>
+                <p className="card-text my-2 mb-3">Input a verified contract's address to load its source code in the editor.</p>
                     <form className="d-flex flex-column" onSubmit={onSubmit}>
                         <Dropdown 
                             chainOptions={chainOptions} 
