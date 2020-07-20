@@ -1,6 +1,6 @@
 import React, { useState, useReducer } from "react";
 import { Alert, Spinner } from "../common";
-import { REPOSITORY_URL, chainOptions } from '../../common/Constants';
+import { REPOSITORY_URL, chainOptions, REPOSITORY_URL_PARTIAL_MATCH, REPOSITORY_URL_FULL_MATCH } from '../../common/Constants';
 import { useStateContext, useDispatchContext } from "../../state/Store";
 import { remixClient } from "../../remix/RemixClient";
 import { AddressInput } from "../common/form/AddressInput"
@@ -60,6 +60,7 @@ export const reducer = (state: IVerifyState, action: IVerifyActions) => {
 }
 
 export const VerifyContract: React.FC = () => {
+    console.log(REPOSITORY_URL_FULL_MATCH);
 
     const initialState: IVerifyState = {
         isLoading: false,
@@ -156,15 +157,23 @@ export const VerifyContract: React.FC = () => {
             }
             {
                 stateContext.verificationResult && !state.error && (
+                    stateContext.verificationResult[0].status === "perfect" ?
                     <Alert type={'success'} heading='Contract successfully verified!'>
                         <p className="m-0 mt-2">
-                            View the verified assets in the <a href={`${REPOSITORY_URL}/${state.chain.id}/${stateContext.verificationResult[0].address}`} target="_blank"rel="noopener noreferrer" > Contract Repo.
+                            View the verified assets in the <a href={`${REPOSITORY_URL_FULL_MATCH}/${state.chain.id}/${stateContext.verificationResult[0].address}`} target="_blank"rel="noopener noreferrer" > Contract Repo.
                         </a>
                         </p>
                         {/* {
                             stateContext.verificationResult &&
                             <p>Found {stateContext.verificationResult.length} addresses of this contract: {stateContext.verificationResult[0].address}</p>
                         } */}
+                    </Alert>
+                    :
+                    <Alert type={'success'} heading='Contract partially verified!'>
+                        <p className="m-0 mt-2">
+                            View the partially verified assets in the <a href={`${REPOSITORY_URL_PARTIAL_MATCH}/${state.chain.id}/${stateContext.verificationResult[0].address}`} 
+                            target="_blank"rel="noopener noreferrer" > Contract Repo.</a>
+                        </p>
                     </Alert>
                 )
             }
