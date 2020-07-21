@@ -60,7 +60,6 @@ export const reducer = (state: IVerifyState, action: IVerifyActions) => {
 }
 
 export const VerifyContract: React.FC = () => {
-    console.log(REPOSITORY_URL_FULL_MATCH);
 
     const initialState: IVerifyState = {
         isLoading: false,
