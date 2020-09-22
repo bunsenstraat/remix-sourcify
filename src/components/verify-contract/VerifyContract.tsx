@@ -81,8 +81,6 @@ export const VerifyContract: React.FC = () => {
         });
     }
 
-    console.log(state.files);
-
     const onSubmit = async (e: any) => {
         e.preventDefault();
         let files = [];
