@@ -41,9 +41,11 @@ module.exports = {
         new Dotenv({
             systemvars: true
         }),
-        new CopyPlugin([
-            path.resolve(__dirname, "public")
-        ]),
+        new CopyPlugin({
+            patterns: [
+                path.resolve(__dirname, "public")
+            ]
+        }),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, 'public', 'index.html'),
         })

@@ -74,6 +74,30 @@ export class RemixClient extends PluginClient {
         });
     }
 
+    fetchLastCompilation = async () => {
+        await this.client.onload();
+        let result = await this.client.call('solidity', 'getCompilationResult');
+        let files = [];
+
+        let metadata;
+        const target = result.source.target;
+        const sol = new File([result.source.sources[target.toString()].content], result.source.target.replace("browser/", ""), { type: "text/plain" });
+
+        Object.keys(result.data.contracts).forEach(key => {
+            Object.keys(result.data.contracts[key]).forEach(nestedKey => {
+                 metadata = new File([result.data.contracts[key][nestedKey].metadata], "metadata.json", { type: "text/plain" });
+            })
+        });
+
+
+        console.log(sol);
+        console.log(metadata)
+
+        files.push(sol, metadata);
+
+        return files;
+    }
+
     detectNetwork = async () => {
         await this.client.onload();
         return await this.client.call('network', 'detectNetwork')

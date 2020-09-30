@@ -77,19 +77,14 @@ export const VerifyContract: React.FC = () => {
 
     if (state.isListening) {
         remixClient.listenOnCompilationFinishedEvent((data: any) => {
-            console.log(data);
-            const contract = data.contract[Object.keys(data.contract)[0]];
-    
-            const sol = new File([data.source], data.target.replace("browser/", ""), { type: "text/plain" });
-            const metadata = new File([contract.metadata], "metadata.json", { type: "text/plain" });
-    
-            dispatch({ type: 'set_files', payload: [sol, metadata] });
+            dispatch({ type: 'set_files', payload: [data.target.replace("browser/", ""), "metadata.json"] });
         });
     }
 
-
     const onSubmit = async (e: any) => {
         e.preventDefault();
+        let files = [];
+        files = await remixClient.fetchLastCompilation();
         dispatch({ type: 'set_error', payload: null} );
         dispatchContext({ type: 'set_verification_result', payload: null} );
         dispatch({ type: 'set_loading', payload: true })
@@ -99,21 +94,21 @@ export const VerifyContract: React.FC = () => {
         formData.append('address', state.address);
         formData.append('chain', state.chain.id.toString());
 
-        if (state.files.length > 0) {
-            state.files.forEach((file: any) => formData.append('files', file));
+        if (files.length > 0) {
+            files.forEach((file: any) => formData.append('files', file));
         }
 
-            const response: VerificationResult = await remixClient.verifyByForm(formData)
-            //const response: VerificationResult = await remixClient.verify(state.address, state.chain.id.toString(), state.files); // To test verify
-            if(response[0].status === 'no match'){
-                dispatch({ type: 'set_error', payload: response[0].message} );
-                dispatch({ type: 'set_loading', payload: false }); 
-            } else {
-                dispatchContext({ type: 'set_verification_result', payload: response} );
-                dispatch({ type: 'set_loading', payload: false });
-            }
-          
+        const response: VerificationResult = await remixClient.verifyByForm(formData)
+        //const response: VerificationResult = await remixClient.verify(state.address, state.chain.id.toString(), state.files); // To test verify
+        if(response[0].status === 'no match'){
+            dispatch({ type: 'set_error', payload: response[0].message} );
+            dispatch({ type: 'set_loading', payload: false }); 
+        } else {
+            dispatchContext({ type: 'set_verification_result', payload: response} );
+            dispatch({ type: 'set_loading', payload: false });
         }
+          
+    }
 
     return (
         <div>
@@ -142,7 +137,7 @@ export const VerifyContract: React.FC = () => {
                     <>
                         <label className="text-muted mt-2">FILES</label>
                         <ul className="border p-2 d-flex flex-column text-muted align-items-center">
-                            {state.files.map(file => <li key={file.name}>{file.name}</li>)}
+                            {state.files.map(file => <li key={file}>{file}</li>)}
                         </ul>
                     </>
                 }
