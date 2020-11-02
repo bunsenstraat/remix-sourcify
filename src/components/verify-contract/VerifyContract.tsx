@@ -1,4 +1,4 @@
-import React, { useState, useReducer } from "react";
+import React, {useState, useReducer, useEffect} from "react";
 import { Alert, Spinner } from "../common";
 import { REPOSITORY_URL, chainOptions, REPOSITORY_URL_PARTIAL_MATCH, REPOSITORY_URL_FULL_MATCH } from '../../common/Constants';
 import { useStateContext, useDispatchContext } from "../../state/Store";
@@ -67,7 +67,7 @@ export const VerifyContract: React.FC = () => {
         address: '',
         error: null,
         files: [],
-        isListening: true
+        isListening: false
     }
 
     const stateContext = useStateContext();
@@ -75,11 +75,25 @@ export const VerifyContract: React.FC = () => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
 
-    if (state.isListening) {
-        remixClient.listenOnCompilationFinishedEvent((data: any) => {
-            dispatch({ type: 'set_files', payload: [data.target.replace("browser/", ""), "metadata.json"] });
-        });
-    }
+    // if (!state.isListening) {
+    //     remixClient.listenOnCompilationFinishedEvent((data: any) => {
+    //         dispatch({ type: 'set_files', payload: [data.target.replace("browser/", ""), "metadata.json"] });
+    //         console.log('HERE')
+    //     });
+    //
+    //         console.log('DISPATCH')
+    //     dispatch({ type: 'set_listening', payload: true});
+    //     console.log(state.isListening)
+    // }
+
+    useEffect(() => {
+        if (!state.isListening) {
+            remixClient.listenOnCompilationFinishedEvent((data: any) => {
+                dispatch({type: 'set_files', payload: [data.target.replace("browser/", ""), "metadata.json"]});
+            });
+            dispatch({type: 'set_listening', payload: true});
+        }
+    }, [state.isListening])
 
     const onSubmit = async (e: any) => {
         e.preventDefault();
