@@ -1,19 +1,23 @@
-import {connectIframe, listenOnThemeChanged} from '@remixproject/plugin';
-import { Api, createIframeClient, PluginClient, RemixApi } from '@remixproject/plugin';
+import { PluginClient } from '@remixproject/plugin'
+import { createClient } from '@remixproject/plugin-webview'
+// import {connectIframe, listenOnThemeChanged} from '@remixproject/plugin';
 import axios from 'axios';
 import { SERVER_URL } from '../common/Constants';
 import { FetchResult, VerificationResult } from '../state/types';
 
-export class RemixClient extends PluginClient {
+class SourcifyPlugin extends PluginClient {
+    constructor() {
+        super()
+        this.methods = ["fetch", "fetchAndSave", "fetchByNetwork", "verify", "verifyByNetwork"];
+    }
+}
+
+export class RemixClient {
 
     public client: any;
 
     constructor() {
-        super();
-        this.methods = ["fetch", "fetchAndSave", "fetchByNetwork", "verify", "verifyByNetwork"];
-        connectIframe(this);
-        listenOnThemeChanged(this);
-        this.client = this;
+        this.client = createClient(new SourcifyPlugin());
     }
 
     createClient = () => {
