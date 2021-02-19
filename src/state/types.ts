@@ -1,13 +1,18 @@
+export type Source = {
+    path: string,
+    name: string,
+    content: string
+}
+
 export type FetchResult = {
-    metadata: string,
-    contract: string
+    metadata: any,
+    sources: Source[]
 }
 
 export type FetchData = {
-    address: string, 
+    address: string,
     network: string | number,
-} 
-
+}
 
 export type VerificationResult = [{
     address: string,

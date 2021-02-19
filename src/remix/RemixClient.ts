@@ -3,7 +3,7 @@ import { createClient } from '@remixproject/plugin-webview'
 // import {connectIframe, listenOnThemeChanged} from '@remixproject/plugin';
 import axios from 'axios';
 import { SERVER_URL } from '../common/Constants';
-import { FetchResult, VerificationResult } from '../state/types';
+import { FetchResult, VerificationResult, Source } from '../state/types';
 
 class SourcifyPlugin extends PluginClient {
     constructor() {
@@ -11,6 +11,8 @@ class SourcifyPlugin extends PluginClient {
         this.methods = ["fetch", "fetchAndSave", "fetchByNetwork", "verify", "verifyByNetwork"];
     }
 }
+
+const SOURCIFY_DIR = "verified-sources";
 
 export class RemixClient {
 
@@ -108,8 +110,8 @@ export class RemixClient {
     }
 
     fetchAndSave = async (address: string, chain: any): Promise<FetchResult>  => {
-        const result: FetchResult = await this.fetchByNetwork(address, chain) 
-        await this.saveFetchedToRemix(result.metadata, result.contract, address)
+        const result: FetchResult = await this.fetchByNetwork(address, chain) ;
+        await this.saveFetchedToRemix(result, address);
         return result;
     }
 
@@ -142,48 +144,47 @@ export class RemixClient {
 
     fetchByNetwork = async (address: string, chain: any): Promise<FetchResult> => {
         return new Promise(async (resolve, reject) => {   
-                let response = await this.fetchFiles(chain, address);
+                const response = await this.fetchFiles(chain, address);
                 
-                if(response.data.error) {
+                if (response.data.error) {
                     console.log(response.data.error);
                     return reject({info: `${response.data.error}. Network: ${chain}`}) 
                 }
-            
-                let fetchResult: FetchResult = {
-                    metadata:'',
-                    contract:'',
+
+                const fetchResult: FetchResult = {
+                    metadata: null,
+                    sources: []
                 };
 
-                for(let i in response.data){
-                    const file = response.data[i];
-                    if(file.name.endsWith('json')){
+                for (const file of response.data) {
+                    if (file.name === "metadata.json") {
+                        if (fetchResult.metadata) {
+                            return reject({ info: "Multiple metadata files fetched" });
+                        }
                         fetchResult.metadata = JSON.parse(file.content);
-                    } else if (file.name.endsWith('sol')){
-                        fetchResult.contract = file.content;
+
+                    } else {
+                        fetchResult.sources.push(file);
                     }
-                };
+                }
 
                 return resolve(fetchResult);
         });
     }
 
-    saveFetchedToRemix = async (metadata: any, contract: any, address: string) => {
-            this.createFile(`/verified-sources/${address}/metadata.json`, JSON.stringify(metadata, null, '\t'))
-            let switched = false
-            for (let file in metadata['sources']) {
-                const urls = metadata['sources'][file].urls
-                for (let url of urls) {
-                    if (url.includes('ipfs')) {
-                        let stdUrl = `ipfs://${url.split('/')[2]}`
-                        const source = await this.contentImport(stdUrl)
-                        file = file.replace('browser/', '')
-                        if(source.content) this.createFile(`/verified-sources/${address}/${file}`, source.content)
-                        if (!switched) await this.switchFile(`/verified-sources/${address}/${file}`)
-                        switched = true
-                        break
-                    }
-                }
-            }
+    saveFetchedToRemix = async (fetched: FetchResult, address: string) => {
+        const filePrefix = `/${SOURCIFY_DIR}/${address}`;
+        await this.createFile(`${filePrefix}/metadata.json`, JSON.stringify(fetched.metadata, null, '\t'));
+
+        for (const source of fetched.sources) {
+            const matching = source.path.match(`/${address}/(.*)$`);
+            const filePath = matching[1];
+            await this.createFile(`${filePrefix}/${filePath}`, source.content);
+        }
+
+        const compilationTarget = fetched.metadata.settings.compilationTarget;
+        const contractPath = Object.keys(compilationTarget)[0];
+        await this.switchFile(`${filePrefix}/sources/${contractPath}`);
     }
 
     verifyByForm = async (formData: any): Promise<VerificationResult> => {

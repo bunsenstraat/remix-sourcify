@@ -6,7 +6,6 @@ import { remixClient } from "../../remix/RemixClient"
 import { useDispatchContext, useStateContext } from '../../state/Store'
 import { onFetched } from '../../state/actions';
 import {Alert, Spinner} from "../common";
-import { FetchResult } from '../../state/types';
 
 export type IFetchState = {
     isLoading: boolean,
@@ -67,14 +66,14 @@ export const ContractFetcher: React.FC = () => {
         dispatch({ type: 'set_loading', payload: true });
 
         try {
-            const response: any = await remixClient.fetchByNetwork(state.address, state.chain.id)
-            await remixClient.saveFetchedToRemix(response.metadata, response.contract, state.address)
-            dispatchContext(onFetched(response));
+            const fetchResult = await remixClient.fetchByNetwork(state.address, state.chain.id);
+            await remixClient.saveFetchedToRemix(fetchResult, state.address);
+            dispatchContext(onFetched(fetchResult));
             dispatch({ type: 'set_loading', payload: false });
             dispatch({ type: 'set_error',  payload: null });
-        } catch (e) {
-            console.log("Error" + JSON.stringify(e));
-            dispatch({ type: 'set_error',  payload: e });
+        } catch (err) {
+            console.log(err);
+            dispatch({ type: 'set_error',  payload: err });
             dispatch({ type: 'set_loading', payload: false });
         }
     };
