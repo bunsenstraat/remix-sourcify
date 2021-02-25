@@ -32,7 +32,7 @@ export const reducer = (state: IVerifyState, action: IVerifyActions) => {
             return {
                 ...state,
                 isLoading: false,
-                error: action.payload
+                error: ( action.payload && ( action.payload.info || action.payload.toString() ))
             };
         case 'set_address':
             return {
@@ -98,7 +98,12 @@ export const VerifyContract: React.FC = () => {
     const onSubmit = async (e: any) => {
         e.preventDefault();
         let files = [];
-        files = await remixClient.fetchLastCompilation();
+        try{
+            files = await remixClient.fetchLastCompilation();
+        }catch(err){
+            dispatch({ type: 'set_error', payload:err} );
+            throw new Error(err)
+        }
         dispatch({ type: 'set_error', payload: null} );
         dispatchContext({ type: 'set_verification_result', payload: null} );
         dispatch({ type: 'set_loading', payload: true })
