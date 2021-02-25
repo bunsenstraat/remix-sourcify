@@ -84,7 +84,7 @@ export class RemixClient {
         await this.client.onload();
         let result = await this.client.call('solidity', 'getCompilationResult');
         let files = [];
-
+        if(!result.source)throw new Error(`Could not get compilation results.`)
         let metadata;
         const target = result.source.target;
         const sol = new File([result.source.sources[target.toString()].content], result.source.target.replace("browser/", ""), { type: "text/plain" });
@@ -111,19 +111,16 @@ export class RemixClient {
 
     fetchAndSave = async (address: string, chain: any): Promise<FetchResult>  => {
         const result: FetchResult = await this.fetchByNetwork(address, chain) ;
-        await this.saveFetchedToRemix(result, address);
+        try{
+            await this.saveFetchedToRemix(result, address);
+        }catch(err){
+            throw new Error(`Could not save files. Please check the address you entered. ${err}`)
+        }
         return result;
     }
 
     fetchFiles = async (chain: any, address: string) => {
-        let response: any;
-
-        try{
-            response = await axios.get(`${SERVER_URL}/files/${chain}/${address}`)
-        } catch(err) {
-            response = err.response;
-        }
-
+        const response = await axios.get(`${SERVER_URL}/files/${chain}/${address}`)
         return response;
     }
 
@@ -144,11 +141,11 @@ export class RemixClient {
 
     fetchByNetwork = async (address: string, chain: any): Promise<FetchResult> => {
         return new Promise(async (resolve, reject) => {   
-                const response = await this.fetchFiles(chain, address);
-                
-                if (response.data.error) {
-                    console.log(response.data.error);
-                    return reject({info: `${response.data.error}. Network: ${chain}`}) 
+                let response
+                try{
+                    response = await this.fetchFiles(chain, address);
+                }catch(err){
+                    return reject({info: `This contract could not be loaded. Please check the address. ${err}. Network: ${chain}`}) 
                 }
 
                 const fetchResult: FetchResult = {
@@ -174,17 +171,21 @@ export class RemixClient {
 
     saveFetchedToRemix = async (fetched: FetchResult, address: string) => {
         const filePrefix = `/${SOURCIFY_DIR}/${address}`;
-        await this.createFile(`${filePrefix}/metadata.json`, JSON.stringify(fetched.metadata, null, '\t'));
+        try{
+            await this.createFile(`${filePrefix}/metadata.json`, JSON.stringify(fetched.metadata, null, '\t'));
 
-        for (const source of fetched.sources) {
-            const matching = source.path.match(`/${address}/(.*)$`);
-            const filePath = matching[1];
-            await this.createFile(`${filePrefix}/${filePath}`, source.content);
+            for (const source of fetched.sources) {
+                const matching = source.path.match(`/${address}/(.*)$`);
+                const filePath = matching[1];
+                await this.createFile(`${filePrefix}/${filePath}`, source.content);
+            }
+
+            const compilationTarget = fetched.metadata.settings.compilationTarget;
+            const contractPath = Object.keys(compilationTarget)[0];
+            await this.switchFile(`${filePrefix}/sources/${contractPath}`);
+        }catch(err){
+            throw new Error(`Could not save the files. Please check the address provided. ${err}`)
         }
-
-        const compilationTarget = fetched.metadata.settings.compilationTarget;
-        const contractPath = Object.keys(compilationTarget)[0];
-        await this.switchFile(`${filePrefix}/sources/${contractPath}`);
     }
 
     verifyByForm = async (formData: any): Promise<VerificationResult> => {

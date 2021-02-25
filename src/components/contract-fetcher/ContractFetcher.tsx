@@ -30,7 +30,7 @@ export const reducer = (state: IFetchState, action: IFetchActions ) => {
             return {
                 ...state,
                 isLoading: false,
-                error: action.payload
+                error: ( action.payload && ( action.payload.info || action.payload.toString() ))
             };
         case 'set_address':
             return {
@@ -72,7 +72,6 @@ export const ContractFetcher: React.FC = () => {
             dispatch({ type: 'set_loading', payload: false });
             dispatch({ type: 'set_error',  payload: null });
         } catch (err) {
-            console.log(err);
             dispatch({ type: 'set_error',  payload: err });
             dispatch({ type: 'set_loading', payload: false });
         }
@@ -100,7 +99,7 @@ export const ContractFetcher: React.FC = () => {
                     state.isLoading && <Spinner />
                 }
                 {
-                    state.error && <Alert type={'danger'} heading={state.error.info}>
+                    state.error && <Alert type={'danger'} heading={state.error}>
                                    </Alert>
                 }
                 {
