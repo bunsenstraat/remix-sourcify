@@ -1,9 +1,10 @@
 import { PluginClient } from '@remixproject/plugin'
 import { createClient } from '@remixproject/plugin-webview'
 // import {connectIframe, listenOnThemeChanged} from '@remixproject/plugin';
-import axios from 'axios';
-import { SERVER_URL } from '../common/Constants';
-import { FetchResult, VerificationResult, Source } from '../state/types';
+import axios, { AxiosResponse } from 'axios';
+import { toChecksumAddress } from 'web3-utils';
+import { REPOSITORY_URL_FULL_MATCH, REPOSITORY_URL_PARTIAL_MATCH, SERVER_URL } from '../common/Constants';
+import { FetchResult, VerificationResult } from '../state/types';
 
 class SourcifyPlugin extends PluginClient {
     constructor() {
@@ -29,7 +30,7 @@ export class RemixClient {
     getFile = async (name: string) => {
         return new Promise(async (resolve, reject) => {
             let path = name.startsWith('./') ? name.substr(2) : name;
-            let content = await this.client.call('fileManager', 'getFile', this.getBrowserPath(path));
+            let content = await this.client.call('fileManager', 'getFile', path);
             if (content) {
                 resolve(content);
             } else {
@@ -39,7 +40,7 @@ export class RemixClient {
     }
 
     getFolderByAddress = async (address: string)  => {
-        return this.client.call('fileManager', 'getFolder', this.getBrowserPath(address))
+        return this.client.call('fileManager', 'getFolder', address)
     }
 
     getCurrentFile = async () => {
@@ -56,13 +57,6 @@ export class RemixClient {
 
     switchFile = async (name: string) => {
         await this.client.call('fileManager', 'switchFile', name)
-    }
-
-    getBrowserPath = (path: string): string => {
-        if (path.startsWith('browser/')) {
-            return path;
-        }
-        return `browser/${path}`;
     }
 
     contentImport = async (stdUrl: string) => {
@@ -83,25 +77,25 @@ export class RemixClient {
     fetchLastCompilation = async () => {
         await this.client.onload();
         let result = await this.client.call('solidity', 'getCompilationResult');
-        let files = [];
-        if(!result.source)throw new Error(`Could not get compilation results.`)
-        let metadata;
+
+        if (!result.source) {
+            throw new Error("Could not get compilation results.");
+        }
+
         const target = result.source.target;
-        const sol = new File([result.source.sources[target.toString()].content], result.source.target.replace("browser/", ""), { type: "text/plain" });
+        const contract = result.data.contracts[target];
+        const contractName = Object.keys(contract)[0];
+        const metadata = new File([contract[contractName].metadata], "metadata.json", { type: "text/plain" });
 
-        Object.keys(result.data.contracts).forEach(key => {
-            Object.keys(result.data.contracts[key]).forEach(nestedKey => {
-                 metadata = new File([result.data.contracts[key][nestedKey].metadata], "metadata.json", { type: "text/plain" });
-            })
-        });
+        const files = [metadata];
+        
+        for (const sourcePath in result.source.sources) {
+            const content = result.source.sources[sourcePath].content;
+            const source = new File([content], sourcePath, { type: "text/plain" });
+            files.push(source);
+        }
 
-
-        console.log(sol);
-        console.log(metadata)
-
-        files.push(sol, metadata);
-
-        return files;
+        return { files, contractName };
     }
 
     detectNetwork = async () => {
@@ -110,6 +104,7 @@ export class RemixClient {
     }
 
     fetchAndSave = async (address: string, chain: any): Promise<FetchResult>  => {
+        address = toChecksumAddress(address.trim());
         const result: FetchResult = await this.fetchByNetwork(address, chain) ;
         try{
             await this.saveFetchedToRemix(result, address);
@@ -141,10 +136,10 @@ export class RemixClient {
 
     fetchByNetwork = async (address: string, chain: any): Promise<FetchResult> => {
         return new Promise(async (resolve, reject) => {   
-                let response
-                try{
+                let response: AxiosResponse<any>;
+                try {
                     response = await this.fetchFiles(chain, address);
-                }catch(err){
+                } catch(err) {
                     return reject({info: `This contract could not be loaded. Please check the address. ${err}. Network: ${chain}`}) 
                 }
 
@@ -170,54 +165,67 @@ export class RemixClient {
     }
 
     saveFetchedToRemix = async (fetched: FetchResult, address: string) => {
+        address = address.trim();
         const filePrefix = `/${SOURCIFY_DIR}/${address}`;
-        try{
+        try {
             await this.createFile(`${filePrefix}/metadata.json`, JSON.stringify(fetched.metadata, null, '\t'));
 
             for (const source of fetched.sources) {
-                const matching = source.path.match(`/${address}/(.*)$`);
-                const filePath = matching[1];
-                await this.createFile(`${filePrefix}/${filePath}`, source.content);
+                let filePath: string;
+                for (const a of [address, toChecksumAddress(address)]) {
+                    const matching = source.path.match(`/${a}/(.*)$`);
+                    if (matching) {
+                        filePath = matching[1];
+                        break;
+                    }
+                }
+
+                if (filePath) {
+                    await this.createFile(`${filePrefix}/${filePath}`, source.content);
+                } else {
+                    throw new Error(`Invalid address (${address})`);
+                }
             }
 
             const compilationTarget = fetched.metadata.settings.compilationTarget;
             const contractPath = Object.keys(compilationTarget)[0];
             await this.switchFile(`${filePrefix}/sources/${contractPath}`);
-        }catch(err){
-            throw new Error(`Could not save the files. Please check the address provided. ${err}`)
+        } catch(err) {
+            throw new Error(`Could not save the files. Please check the address provided. ${err}`);
         }
     }
 
     verifyByForm = async (formData: any): Promise<VerificationResult> => {
-        const verifyResult: VerificationResult = [{
+        const verificationResult: VerificationResult = {
             address: formData.get('address'),
-            status: '',
+            status: 'no match',
             message: ''
-        }]
+        };
 
-        let response: any; 
         try {
-            response = await axios.post(`${SERVER_URL}`, formData)
-            verifyResult[0].status =  response.data.result[0].status;
-            verifyResult[0].message = 'Successfully verified';
+            const response = await axios.post(SERVER_URL, formData)
+            verificationResult.status = response.data.result[0].status;
+            verificationResult.message = 'Successfully verified';
+            const repoUrl = verificationResult.status === "perfect" ? REPOSITORY_URL_FULL_MATCH : REPOSITORY_URL_PARTIAL_MATCH;
+            verificationResult.url = `${repoUrl}/${formData.get("chain")}/${verificationResult.address}`;
+            verificationResult.storageTimestamp = response.data.result[0].storageTimestamp;
         } catch(e) {
-            verifyResult[0].status = 'no match';
-            verifyResult[0].message = JSON.stringify(e.response.data.error);
+            verificationResult.message = JSON.stringify(e.response.data.error);
         }
 
-        return verifyResult;
+        return verificationResult;
     } 
 
     verify = async (address: string, files: any): Promise<VerificationResult> => {
-        let chain = await this.detectNetwork()
+        let chain = await this.detectNetwork();
 
         // Use version from plugin if vm is used inside Remix or there is no network at all
         if(typeof chain === "undefined" || chain.id === "-" ) {
-            return [{
+            return {
                 address: address,
-                status: 'no_match',
+                status: 'no_match', // the underscore _ might be a typo, anyway `status` should be an enum
                 message: 'invalid_network'
-            }]        
+            }
         }
 
         return await this.verifyByNetwork(address, chain.id, files);

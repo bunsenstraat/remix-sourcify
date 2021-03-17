@@ -14,11 +14,13 @@ export type FetchData = {
     network: string | number,
 }
 
-export type VerificationResult = [{
+export type VerificationResult = {
     address: string,
     status: string,
-    message: string
-}]
+    message: string,
+    url?: string,
+    storageTimestamp?: string
+}
 
 export type VerifyData = {
     address: string,
