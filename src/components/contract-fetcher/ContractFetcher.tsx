@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from 'react';
+import React, { useReducer } from 'react';
 import { Dropdown } from "../common/form/Dropdown"
 import { AddressInput } from "../common/form/AddressInput"
 import { chainOptions } from "../../common/Constants"
@@ -6,6 +6,7 @@ import { remixClient } from "../../remix/RemixClient"
 import { useDispatchContext, useStateContext } from '../../state/Store'
 import { onFetched } from '../../state/actions';
 import {Alert, Spinner} from "../common";
+import { isAddress } from 'web3-utils';
 
 export type IFetchState = {
     isLoading: boolean,
@@ -35,7 +36,7 @@ export const reducer = (state: IFetchState, action: IFetchActions ) => {
         case 'set_address':
             return {
                 ...state,
-                address: action.payload
+                address: action.payload.trim()
             };
         case 'set_chain':
             return {
@@ -66,6 +67,9 @@ export const ContractFetcher: React.FC = () => {
         dispatch({ type: 'set_loading', payload: true });
 
         try {
+            if (!isAddress(state.address)) {
+                throw new Error(`Invalid address: ${state.address}`);
+            }
             const fetchResult = await remixClient.fetchByNetwork(state.address, state.chain.id);
             await remixClient.saveFetchedToRemix(fetchResult, state.address);
             dispatchContext(onFetched(fetchResult));

@@ -1,11 +1,12 @@
-import React, {useState, useReducer, useEffect} from "react";
+import React, { useReducer, useEffect} from "react";
 import { Alert, Spinner } from "../common";
-import { REPOSITORY_URL, chainOptions, REPOSITORY_URL_PARTIAL_MATCH, REPOSITORY_URL_FULL_MATCH } from '../../common/Constants';
+import { REPOSITORY_URL, chainOptions, IPFS_GATEWAY, REPOSITORY_URL_FULL_MATCH } from '../../common/Constants';
 import { useStateContext, useDispatchContext } from "../../state/Store";
 import { remixClient } from "../../remix/RemixClient";
 import { AddressInput } from "../common/form/AddressInput"
 import { Dropdown } from "../common/form/Dropdown"
 import { VerificationResult } from "../../state/types";
+import web3utils from "web3-utils";
 
 export type IVerifyState = {
     isLoading: boolean,
@@ -13,11 +14,12 @@ export type IVerifyState = {
     chain: any,
     address: string,
     files: [],
+    contractName: string
     isListening: boolean
 }
 
 export type IVerifyActions = {
-    type: 'set_loading' | 'set_error' | 'set_address' | 'set_chain' | 'set_files' | 'set_listening';
+    type: 'set_loading' | 'set_error' | 'set_address' | 'set_chain' | 'set_files' | 'set_listening' | 'set_contract_name';
     payload?: any
 }
 
@@ -37,7 +39,7 @@ export const reducer = (state: IVerifyState, action: IVerifyActions) => {
         case 'set_address':
             return {
                 ...state,
-                address: action.payload
+                address: action.payload.toString().trim()
             };
         case 'set_chain':
             return {
@@ -53,6 +55,11 @@ export const reducer = (state: IVerifyState, action: IVerifyActions) => {
             return {
                 ...state,
                 isListening: action.payload
+            };
+        case 'set_contract_name':
+            return {
+                ...state,
+                contractName: action.payload
             }
         default:
             return state;
@@ -67,6 +74,7 @@ export const VerifyContract: React.FC = () => {
         address: '',
         error: null,
         files: [],
+        contractName: "",
         isListening: false
     }
 
@@ -88,8 +96,11 @@ export const VerifyContract: React.FC = () => {
 
     useEffect(() => {
         if (!state.isListening) {
-            remixClient.listenOnCompilationFinishedEvent((data: any) => {
-                dispatch({type: 'set_files', payload: [data.target.replace("browser/", ""), "metadata.json"]});
+            remixClient.listenOnCompilationFinishedEvent(async () => {
+                const { contractName, files } = await remixClient.fetchLastCompilation();
+                dispatch({ type: "set_contract_name", payload: contractName });
+                dispatch({ type: "set_files", payload: files });
+                dispatch({ type: "set_error", payload: null });
             });
             dispatch({type: 'set_listening', payload: true});
         }
@@ -97,48 +108,60 @@ export const VerifyContract: React.FC = () => {
 
     const onSubmit = async (e: any) => {
         e.preventDefault();
-        let files = [];
-        try{
-            files = await remixClient.fetchLastCompilation();
-        }catch(err){
-            dispatch({ type: 'set_error', payload:err} );
-            throw new Error(err)
-        }
         dispatch({ type: 'set_error', payload: null} );
         dispatchContext({ type: 'set_verification_result', payload: null} );
         dispatch({ type: 'set_loading', payload: true })
 
         const formData = new FormData();
 
-        formData.append('address', state.address);
+        if (web3utils.isAddress(state.address)) {
+            formData.append('address', state.address);
+        } else {
+            dispatch({ type: "set_error", payload: "Invalid address" });
+            dispatch({ type: 'set_loading', payload: false });
+            return;
+        }
+
         formData.append('chain', state.chain.id.toString());
 
-        if (files.length > 0) {
-            files.forEach((file: any) => formData.append('files', file));
+        if (state.files.length > 0) {
+            state.files.forEach((file: any) => formData.append('files', file));
+        } else {
+            dispatch({ type: "set_error", payload: "No contracts to verify" });
+            dispatch({ type: 'set_loading', payload: false });
+            return;
         }
 
-        const response: VerificationResult = await remixClient.verifyByForm(formData)
-        //const response: VerificationResult = await remixClient.verify(state.address, state.chain.id.toString(), state.files); // To test verify
-        if(response[0].status === 'no match'){
-            dispatch({ type: 'set_error', payload: response[0].message} );
-            dispatch({ type: 'set_loading', payload: false }); 
+        const response: VerificationResult = await remixClient.verifyByForm(formData);
+        if (response.status === 'no match') {
+            dispatch({ type: 'set_error', payload: response.message} );
         } else {
             dispatchContext({ type: 'set_verification_result', payload: response} );
-            dispatch({ type: 'set_loading', payload: false });
         }
-          
+        dispatch({ type: 'set_loading', payload: false });
     }
+
+    const generateAlertSuccessHeading = (): string => {
+        const timestamp = stateContext.verificationResult.storageTimestamp;
+        if (timestamp) {
+            const formattedTimestamp = new Date(timestamp).toUTCString();
+            return `Contract already verified on ${formattedTimestamp}`;
+        }
+
+        const matchString = stateContext.verificationResult.status === "perfect" ? "successfully" : "only partially";
+        return `Contract ${matchString} verified`;
+    };
 
     return (
         <div>
             <p className="card-text my-2">
-                Uploads, verifies & publishes a deployed contract's metadata and source files.
+                Upload, verify & publish contract metadata and sources.
             </p>
             <p className="card-text my-2">
                 Note: the metadata must be exactly the same as at deployment time
             </p>
             <p className="card-text my-2">
-                Browse repository <a href={`${REPOSITORY_URL}`} target="_blank" rel="noopener noreferrer" >here</a> or via <a href="https://gateway.ipfs.io/ipns/QmNmBr4tiXtwTrHKjyppUyAhW1FQZMJTdnUrksA9hapS4u" target="_blank" rel="noopener noreferrer" >ipfs/ipns gateway.</a>
+                Browse repository <a href={`${REPOSITORY_URL}`} target="_blank" rel="noopener noreferrer" >here</a> or via <a href={IPFS_GATEWAY} target="_blank" rel="noopener noreferrer" >ipfs/ipns gateway.</a>
             </p>
             <form className="d-flex flex-column" onSubmit={onSubmit}>
                 <Dropdown 
@@ -150,13 +173,22 @@ export const VerifyContract: React.FC = () => {
                 <button 
                     type="submit" 
                     className="btn btn-primary my-2" 
-                    disabled={!state.address}>Verify</button>
+                    disabled={!state.address}>Verify
+                </button>
+                {
+                    state.contractName &&
+                    <>
+                        <label className="text-muted mt-2">CONTRACT</label>
+                        <p>{ state.contractName }</p>
+                    </>
+
+                }
                 {
                     state.files.length > 0 &&
                     <>
                         <label className="text-muted mt-2">FILES</label>
                         <ul className="border p-2 d-flex flex-column text-muted align-items-center">
-                            {state.files.map(file => <li key={file}>{file}</li>)}
+                            {state.files.map(file => <li key={file.name}>{file.name}</li>)}
                         </ul>
                     </>
                 }
@@ -170,22 +202,10 @@ export const VerifyContract: React.FC = () => {
             }
             {
                 stateContext.verificationResult && !state.error && (
-                    stateContext.verificationResult[0].status === "perfect" ?
-                    <Alert type={'success'} heading='Contract successfully verified!'>
+                    <Alert type='success' heading={generateAlertSuccessHeading()}>
                         <p className="m-0 mt-2">
-                            View the verified assets in the <a href={`${REPOSITORY_URL_FULL_MATCH}/${state.chain.id}/${stateContext.verificationResult[0].address}`} target="_blank"rel="noopener noreferrer" > Contract Repo.
-                        </a>
-                        </p>
-                        {/* {
-                            stateContext.verificationResult &&
-                            <p>Found {stateContext.verificationResult.length} addresses of this contract: {stateContext.verificationResult[0].address}</p>
-                        } */}
-                    </Alert>
-                    :
-                    <Alert type={'success'} heading='Contract partially verified!'>
-                        <p className="m-0 mt-2">
-                            View the partially verified assets in the <a href={`${REPOSITORY_URL_PARTIAL_MATCH}/${state.chain.id}/${stateContext.verificationResult[0].address}`} 
-                            target="_blank"rel="noopener noreferrer" > Contract Repo.</a>
+                            View the assets in the
+                            <a href={`${stateContext.verificationResult.url}`} target="_blank"rel="noopener noreferrer"> Contract Repo.</a>
                         </p>
                     </Alert>
                 )
