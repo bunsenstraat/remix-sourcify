@@ -6,31 +6,26 @@ import { toChecksumAddress } from 'web3-utils';
 import { REPOSITORY_URL_FULL_MATCH, REPOSITORY_URL_PARTIAL_MATCH, SERVER_URL } from '../common/Constants';
 import { FetchResult, VerificationResult } from '../state/types';
 
-class SourcifyPlugin extends PluginClient {
-    constructor() {
-        super()
-        this.methods = ["fetch", "fetchAndSave", "fetchByNetwork", "verify", "verifyByNetwork"];
-    }
-}
-
 const SOURCIFY_DIR = "verified-sources";
 
-export class RemixClient {
+export class RemixClient extends PluginClient {
 
     public client: any;
 
     constructor() {
-        this.client = createClient(new SourcifyPlugin());
+        super()
+        createClient(this);
+        this.methods = ["fetch", "fetchAndSave", "fetchByNetwork", "verify", "verifyByNetwork"];
     }
 
     createClient = () => {
-        return this.client.onload();
+        return this.onload();
     }
 
     getFile = async (name: string) => {
         return new Promise(async (resolve, reject) => {
             let path = name.startsWith('./') ? name.substr(2) : name;
-            let content = await this.client.call('fileManager', 'getFile', path);
+            let content = await this.call('fileManager', 'getFile', path);
             if (content) {
                 resolve(content);
             } else {
@@ -40,32 +35,32 @@ export class RemixClient {
     }
 
     getFolderByAddress = async (address: string)  => {
-        return this.client.call('fileManager', 'getFolder', address)
+        return this.call('fileManager', 'getFolder', address)
     }
 
     getCurrentFile = async () => {
-        return this.client.call('fileManager', 'getCurrentFile');
+        return this.call('fileManager', 'getCurrentFile');
     }
 
     createFile = async (name: string, content: any) => {
         try {
-            await this.client.call('fileManager', 'setFile', name, content)
+            await this.call('fileManager', 'setFile', name, content)
         } catch (err) {
             console.log(err)
         }
     }
 
     switchFile = async (name: string) => {
-        await this.client.call('fileManager', 'switchFile', name)
+        await this.call('fileManager', 'switchFile', name)
     }
 
-    contentImport = async (stdUrl: string) => {
-        return await this.client.call('contentImport', 'resolve', stdUrl)
+    contentImporter = async (stdUrl: string) => {
+        return await this.call('contentImport', 'resolve', stdUrl)
     }
 
     listenOnCompilationFinishedEvent = async (callback: any) => {
-        await this.client.onload();
-        this.client.on('solidity', 'compilationFinished', (target, source, _version, data) => {
+        await this.onload();
+        this.on('solidity', 'compilationFinished', (target, source, _version, data) => {
             callback({ 
                 target, 
                 source: source.sources[target].content, 
@@ -75,8 +70,8 @@ export class RemixClient {
     }
 
     fetchLastCompilation = async () => {
-        await this.client.onload();
-        let result = await this.client.call('solidity', 'getCompilationResult');
+        await this.onload();
+        let result = await this.call('solidity', 'getCompilationResult');
 
         if (!result.source) {
             throw new Error("Could not get compilation results.");
@@ -99,8 +94,8 @@ export class RemixClient {
     }
 
     detectNetwork = async () => {
-        await this.client.onload();
-        return await this.client.call('network', 'detectNetwork')
+        await this.onload();
+        return await this.call('network', 'detectNetwork')
     }
 
     fetchAndSave = async (address: string, chain: any): Promise<FetchResult>  => {
